@@ -29,13 +29,16 @@ from dkconsole.service_factory import factory
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+def get_username():
+    return pwd.getpwuid(os.getuid())[0]
 
 # Create the logs folder and setup proper permission
 log_filename = "logs/output.log"
 log_folder_path = os.path.dirname(log_filename)
 os.makedirs(log_folder_path, exist_ok=True)
-uid = pwd.getpwnam("pi").pw_uid
-gid = grp.getgrnam("pi").gr_gid
+username = get_username()
+uid = pwd.getpwnam(username).pw_uid
+gid = grp.getgrnam(username).gr_gid
 os.chown(log_folder_path, uid, gid)
 
 LOGGING = {
@@ -85,15 +88,19 @@ if (env.str('mode', None) == 'docker'):
 else:
     if os.uname()[4] in ('armv7l', 'aarch64'):
     # if platform.uname() == 'armv7l': # for windows only
-        print("loading form .env_pi4")
+        print(f"loading form {username}")
 
         if (donkeycar_version.major == 3):
             env.read_env(str(ROOT_DIR / ".env_pi_v3"))
+        elif (username == "jetson"):
+            env.read_env(str(ROOT_DIR / ".env_jetson"))
         else:
             env.read_env(str(ROOT_DIR / ".env_pi_v4"))
     else:
         if (donkeycar_version.major == 3):
             env.read_env(str(ROOT_DIR / ".env_pc_v3"))
+        elif (username == "jetson"):
+            env.read_env(str(ROOT_DIR / ".env_jetson"))
         elif (donkeycar_version.major == 4):
             env.read_env(str(ROOT_DIR / ".env_pc_v4"))
         else:
